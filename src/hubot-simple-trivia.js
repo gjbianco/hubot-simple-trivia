@@ -2,7 +2,7 @@ const _ = require('lodash')
 const axios = require('axios')
 const leven = require('leven')
 
-const INACTIVE_MESSAGE = 'no active question! use `!trivianew [topic]` to start a new game'
+const INACTIVE_MESSAGE = 'no active question! use `!trivianew` to start a new game'
 
 module.exports = robot => {
 
