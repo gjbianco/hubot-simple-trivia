@@ -1,6 +1,6 @@
 {
   "name": "hubot-simple-trivia",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "basic triva using opentdb.com",
   "main": "index.js",
   "repository": "https://github.com/gjbianco/hubot-simple-trivia",
