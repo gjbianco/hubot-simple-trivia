@@ -76,7 +76,7 @@ module.exports = robot => {
     const levenPercent = Math.abs(100 * ((correctLength - levenValue) / correctLength))
     // console.log(levenPercent + '%')
     if (levenPercent > 85) {
-      res.send('CORRECT')
+      res.send(`CORRECT! The answer was \`${currentQuestion.correct_answer}\``)
       currentQuestion = undefined
     }
   })
