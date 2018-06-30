@@ -39,7 +39,15 @@ module.exports = robot => {
     })
       .then(result => (result.data))
       .then(data => (data.results[0]))
-      .then((question) => {
+      .then(question => {
+        question.question = _.unescape(question.question)
+        question.correct_answer = _.unescape(question.correct_answer)
+        question.incorrect_answers[0] = _.unescape(question.incorrect_answers[0])
+        question.incorrect_answers[1] = _.unescape(question.incorrect_answers[1])
+        question.incorrect_answers[2] = _.unescape(question.incorrect_answers[2])
+        return question
+      })
+      .then(question => {
         currentQuestion = question
         res.send(formatQuestion(question))
       })
