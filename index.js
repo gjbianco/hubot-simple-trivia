@@ -20,7 +20,7 @@ module.exports = robot => {
   robot.hear(/^!triviarepeat$/i, res => {
     trivia
         .repeatQuestion()
-        .then(s = res.send(s))
+        .then(s => res.send(s))
         .catch((e => {
           console.error(e)
           res.send('Having trouble... Sorry...')
@@ -30,7 +30,7 @@ module.exports = robot => {
   robot.hear(/^!ans ([abcdABCD])$/i, res => {
     trivia
         .answer(res.match[1])
-        .then(s = res.send(s))
+        .then(s => res.send(s))
         .catch((e => {
           console.error(e)
           res.send('Having trouble... Sorry...')
