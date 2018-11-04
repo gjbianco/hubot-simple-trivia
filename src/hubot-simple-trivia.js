@@ -1,84 +1,100 @@
 const _ = require('lodash')
 const axios = require('axios')
-const leven = require('leven')
+const he = require('he')
 
-const INACTIVE_MESSAGE = 'no active question! use `!trivianew` to start a new game'
+module.exports = {
+  newQuestion,
+  repeatQuestion,
+  answer
+}
 
-module.exports = robot => {
+const INACTIVE_MESSAGE = 'No active question! use `!trivianew` to start a new game'
 
-  let currentQuestion
-  let currentTopic
+// Supports up to 6 multiple choice answers
+const answerNames = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-  function formatQuestion(question) {
-    const randomAnswers = question.type === 'multiple' ? '\n' + randomizeAnswers(question) : ''
-    return `*${question.category} - ${question.difficulty} - ${question.type}*\n${question.question}${randomAnswers}`
-  }
+let currentQuestion
 
-  function randomizeAnswers(question) {
-    const allAnswers = [
-      question.correct_answer,
-      question.incorrect_answers[0],
-      question.incorrect_answers[1],
-      question.incorrect_answers[2],
-    ]
-    return _.chain(allAnswers)
-            .shuffle()
-            .join('\n')
-            .value()
-  }
-
-  // TODO
-  // robot.hear(/^!triviatopics$/i, res => {
-  //   res.send
-  // })
-
-  robot.hear(/^!trivianew ?(.*)$/i, res => {
-    axios({
-      method: 'get',
-      url: 'https://opentdb.com/api.php?amount=1'
+function newQuestion() {
+  return axios({
+    method: 'get',
+    url: 'https://opentdb.com/api.php?amount=1'
+  })
+    .then(result => (result.data))
+    .then(data => (data.results[0]))
+    .then(buildQuestion)
+    .then(question => {
+      currentQuestion = question
+      return formatQuestion(question)
     })
-      .then(result => (result.data))
-      .then(data => (data.results[0]))
-      .then(question => {
-        question.question = _.unescape(question.question)
-        question.correct_answer = _.unescape(question.correct_answer)
-        question.incorrect_answers[0] = _.unescape(question.incorrect_answers[0])
-        question.incorrect_answers[1] = _.unescape(question.incorrect_answers[1])
-        question.incorrect_answers[2] = _.unescape(question.incorrect_answers[2])
-        return question
-      })
-      .then(question => {
-        currentQuestion = question
-        res.send(formatQuestion(question))
-      })
-      .catch(() => {
-        res.send('could not get question')
-      })
-  })
+}
 
-  robot.hear(/^!triviarepeat$/i, res => {
+function repeatQuestion() {
+  return Promise.resolve().then(() => {
     if (currentQuestion) {
-      res.send(formatQuestion(currentQuestion))
+      return formatQuestion(currentQuestion)
     } else {
-      res.send(INACTIVE_MESSAGE)
+      return INACTIVE_MESSAGE
     }
-  })
+  });
+}
 
-  robot.hear(/^!ans (.*)$/i, res => {
+function answer(ans) {
+  return Promise.resolve().then(() => {
     if (!currentQuestion) {
-      res.send(INACTIVE_MESSAGE)
-      return
+      return INACTIVE_MESSAGE
     }
-    const ans = _.lowerCase(res.match[1])
-    const correctAnswer = _.lowerCase(currentQuestion.correct_answer)
-    const levenValue = leven(ans, correctAnswer)
-    const correctLength = correctAnswer.length
-    const levenPercent = Math.abs(100 * ((correctLength - levenValue) / correctLength))
-    // console.log(levenPercent + '%')
-    if (levenPercent > 85) {
-      res.send(`CORRECT! The answer was \`${currentQuestion.correct_answer}\``)
-      currentQuestion = undefined
-    }
-  })
 
+    const idx = answerNames.indexOf(_.upperCase(ans))
+
+    if (idx !== currentQuestion.correctAnswerIdx) {
+      return 'WRONG!'
+    }
+
+    const correctAnswer = currentQuestion.correctAnswer
+    currentQuestion = undefined
+    return `CORRECT! The answer was \`${correctAnswer}\``
+  })
+}
+
+function formatQuestion(question) {
+  return `
+* ${question.category} - ${question.difficulty} *
+${question.question}
+${formatAnswers(question.answers)}
+`
+}
+
+function formatAnswers(answers) {
+  const answersWithNames = answers.map((a, idx) => `${answerNames[idx]}) ${a}`)
+  return answersWithNames.join('\n')
+}
+
+function insertIntoArray(arr, item, idx) {
+  // Could use splice but I hate splice
+  return _.flatten([
+    arr.slice(0, idx),
+    item,
+    arr.slice(idx)
+  ])
+}
+
+function buildQuestion(serverQuestion) {
+  const correctAnswer = he.decode(serverQuestion.correct_answer)
+  const incorrectAnswers = _.shuffle(_.map(serverQuestion.incorrect_answers, he.decode))
+  const correctAnswerIdx = _.random(0, incorrectAnswers.length)
+  const answers = insertIntoArray(
+    incorrectAnswers,
+    correctAnswer,
+    correctAnswerIdx
+  )
+
+  return {
+    question: he.decode(serverQuestion.question),
+    category: he.decode(serverQuestion.category),
+    difficulty: _.capitalize(he.decode(serverQuestion.difficulty)),
+    answers: answers,
+    correctAnswer: correctAnswer,
+    correctAnswerIdx: correctAnswerIdx
+  }
 }
