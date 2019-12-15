@@ -10,8 +10,8 @@
   "author": "Guy Bianco IV <gjbiancoiv@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.18.0",
+    "axios": "^0.18.1",
     "he": "^1.2.0",
-    "lodash": "^4.17.10"
+    "lodash": "^4.17.15"
   }
 }
